@@ -1,6 +1,8 @@
 #include <jni.h>
 #include <jvmti.h>
 
+#include <string.h>
+
 FILE *method_file = NULL;
 
 void open_file() {
@@ -43,7 +45,7 @@ cbCompiledMethodLoad(jvmtiEnv *env,
     char *csig;
     (*env)->GetClassSignature(env, class, &csig, NULL);
 
-    fprintf(method_file, "%lx %x %s.%s%s\n", code_addr, code_size, csig, name, msig);
+    fprintf(method_file, "%lx %x %s.%s%s\n", (long unsigned int)code_addr, code_size, csig, name, msig);
     fsync(fileno(method_file));
     (*env)->Deallocate(env, name);
     (*env)->Deallocate(env, msig);
@@ -62,7 +64,7 @@ cbDynamicCodeGenerated(jvmtiEnv *jvmti_env,
     if (!method_file)
         open_file();
 
-    fprintf(method_file, "%lx %x %s\n", address, length, name);
+    fprintf(method_file, "%lx %x %s\n", (long unsigned int)address, length, name);
     //printf("[tracker] Code generated: %s %lx %x\n", name, address, length);
 }
 
@@ -90,7 +92,7 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
     // If options don't parse, do you want this to be an error?
 
     // Clear the capabilities structure and set the ones you need.
-    (void)memset(&capabilities,0, sizeof(capabilities));
+    memset(&capabilities,0, sizeof(capabilities));
     capabilities.can_generate_all_class_hook_events  = 1;
     capabilities.can_tag_objects                     = 1;
     capabilities.can_generate_object_free_events     = 1;
@@ -104,7 +106,7 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
     // If error!=JVMTI_ERROR_NONE, your agent may be in trouble.
 
     // Clear the callbacks structure and set the ones you want.
-    (void)memset(&callbacks,0, sizeof(callbacks));
+    memset(&callbacks,0, sizeof(callbacks));
     callbacks.VMInit           = &cbVMInit;
     callbacks.VMStart           = &cbVMStart;
     callbacks.CompiledMethodLoad  = &cbCompiledMethodLoad;
