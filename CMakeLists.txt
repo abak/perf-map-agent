@@ -8,9 +8,7 @@ if (JNI_FOUND)
     message (STATUS "JAVA_INCLUDE_PATH=${JAVA_INCLUDE_PATH}")
     message (STATUS "JAVA_INCLUDE_PATH2=${JAVA_INCLUDE_PATH2}")
 endif()
-INCLUDE_DIRECTORIES(${JAVA_INCLUDE_PATH})
-INCLUDE_DIRECTORIES(${JAVA_INCLUDE_PATH2})
+include_directories(${JAVA_INCLUDE_PATH})
+include_directories(${JAVA_INCLUDE_PATH2})
 
 add_library(perfmap SHARED perf-map-agent.c)
-
-
