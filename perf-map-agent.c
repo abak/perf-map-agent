@@ -2,8 +2,10 @@
 #include <jvmti.h>
 
 #include <string.h>
+#include <stdbool.h>
 
 FILE *method_file = NULL;
+bool verbose = false;
 
 void open_file() {
     char methodFileName[500];
@@ -24,9 +26,9 @@ cbVMStart(jvmtiEnv *jvmti, JNIEnv *env) {
     jvmtiJlocationFormat format;
     (*jvmti)->GetJLocationFormat(jvmti, &format);
 
-#ifndef NDEBUG
+if(verbose)
     printf("[tracker] VMStart LocationFormat: %d\n", format);
-#endif 
+
 }
 
 static void JNICALL
@@ -54,13 +56,12 @@ cbCompiledMethodLoad(jvmtiEnv *env,
     (*env)->Deallocate(env, msig);
     (*env)->Deallocate(env, csig);
 
-#ifndef NDEBUG
+if(verbose)
     for (i = 0; i < map_length; i++) {
       printf("[tracker] Entry: start_address: 0x%lx location: %d\n", 
              (unsigned long int)map[i].start_address, 
              (int)map[i].location);
     }
-#endif
 }
 
 void JNICALL
@@ -72,23 +73,22 @@ cbDynamicCodeGenerated(jvmtiEnv *jvmti_env,
         open_file();
 
     fprintf(method_file, "%lx %x %s\n", (long unsigned int)address, length, name);
-#ifndef NDEBUG
+
+if(verbose)
     printf("[tracker] Code generated: %s %lx %x\n", 
             name, 
             (unsigned long int)address, 
             length);
-#endif
 }
 
 void JNICALL
 cbCompiledMethodUnload(jvmtiEnv *jvmti_env,
             jmethodID method,
             const void* code_addr) {
-#ifndef NDEBUG
+if(verbose)
     printf("[tracker] Unloaded %ld code_addr: 0x%lx\n", 
            (long int)method, 
            (unsigned long int)code_addr);
-#endif
 }
 
 JNIEXPORT jint JNICALL
@@ -98,6 +98,11 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
     jint                   res;
     jvmtiCapabilities      capabilities;
     jvmtiEventCallbacks    callbacks;
+
+    if(options && 0 == strcmp(options, "verbose"))
+    {
+        verbose = true;
+    }
 
     // Create the JVM TI environment (jvmti).
     res = (*vm)->GetEnv(vm, (void **)&jvmti, JVMTI_VERSION_1);
