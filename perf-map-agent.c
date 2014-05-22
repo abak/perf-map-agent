@@ -23,7 +23,10 @@ static void JNICALL
 cbVMStart(jvmtiEnv *jvmti, JNIEnv *env) {
     jvmtiJlocationFormat format;
     (*jvmti)->GetJLocationFormat(jvmti, &format);
-    //printf("[tracker] VMStart LocationFormat: %d\n", format);
+
+#ifndef NDEBUG
+    printf("[tracker] VMStart LocationFormat: %d\n", format);
+#endif 
 }
 
 static void JNICALL
@@ -51,9 +54,13 @@ cbCompiledMethodLoad(jvmtiEnv *env,
     (*env)->Deallocate(env, msig);
     (*env)->Deallocate(env, csig);
 
-    /*for (i = 0; i < map_length; i++) {
-      printf("[tracker] Entry: start_address: 0x%lx location: %d\n", map[i].start_address, map[i].location);
-    }*/
+#ifndef NDEBUG
+    for (i = 0; i < map_length; i++) {
+      printf("[tracker] Entry: start_address: 0x%lx location: %d\n", 
+             (unsigned long int)map[i].start_address, 
+             (int)map[i].location);
+    }
+#endif
 }
 
 void JNICALL
@@ -65,14 +72,23 @@ cbDynamicCodeGenerated(jvmtiEnv *jvmti_env,
         open_file();
 
     fprintf(method_file, "%lx %x %s\n", (long unsigned int)address, length, name);
-    //printf("[tracker] Code generated: %s %lx %x\n", name, address, length);
+#ifndef NDEBUG
+    printf("[tracker] Code generated: %s %lx %x\n", 
+            name, 
+            (unsigned long int)address, 
+            length);
+#endif
 }
 
 void JNICALL
 cbCompiledMethodUnload(jvmtiEnv *jvmti_env,
             jmethodID method,
             const void* code_addr) {
-    //printf("[tracker] Unloaded %ld code_addr: 0x%lx\n", method, code_addr);
+#ifndef NDEBUG
+    printf("[tracker] Unloaded %ld code_addr: 0x%lx\n", 
+           (long int)method, 
+           (unsigned long int)code_addr);
+#endif
 }
 
 JNIEXPORT jint JNICALL
