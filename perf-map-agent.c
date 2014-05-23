@@ -44,7 +44,8 @@ cbCompiledMethodLoad(jvmtiEnv *env,
             const void* code_addr,
             jint map_length,
             const jvmtiAddrLocationMap* map,
-            const void* compile_info) {
+            const void* compile_info) 
+{
     int i;
 
     char *name;
@@ -77,27 +78,29 @@ void JNICALL
 cbDynamicCodeGenerated(jvmtiEnv *jvmti_env,
             const char* name,
             const void* address,
-            jint length) {
+            jint length) 
+{
     if (!method_file)
         open_file();
 
     fprintf(method_file, "%lx %x %s\n", (long unsigned int)address, length, name);
 
-if(verbose>1)
-    printf("[tracker] Code generated: %s %lx %x\n", 
-            name, 
-            (unsigned long int)address, 
-            length);
+    if(verbose>1)
+        printf("[tracker] Code generated: %s %lx %x\n", 
+                name, 
+                (unsigned long int)address, 
+                length);
 }
 
 void JNICALL
 cbCompiledMethodUnload(jvmtiEnv *jvmti_env,
             jmethodID method,
-            const void* code_addr) {
-if(verbose>1)
-    printf("[tracker] Unloaded %ld code_addr: 0x%lx\n", 
-           (long int)method, 
-           (unsigned long int)code_addr);
+            const void* code_addr) 
+{
+    if(verbose>1)
+        printf("[tracker] Unloaded %ld code_addr: 0x%lx\n", 
+               (long int)method, 
+               (unsigned long int)code_addr);
 }
 
 JNIEXPORT jint JNICALL
