@@ -12,6 +12,7 @@
 
 FILE *method_file = NULL;
 int verbose = 0;
+bool can_get_source_file;
 
 void open_file() {
     char methodFileName[500];
@@ -57,7 +58,13 @@ cbCompiledMethodLoad(jvmtiEnv *env,
     char *csig;
     (*env)->GetClassSignature(env, class, &csig, NULL);
 
-    char* source_file;
+    if(can_get_source_file)
+    {
+        char* source_file;
+        (*env)->GetSourceFileName(env, class, &source_file);
+        printf("%s : %s\n", csig, source_file);
+        (*env)->Deallocate(env, (unsigned char *) source_file);
+    }
 
     fprintf(method_file, "%lx %x %s.%s%s\n", (long unsigned int)code_addr, code_size, csig, name, msig);
     fsync(fileno(method_file));
@@ -154,6 +161,8 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
         PRINT_CAPABABILITY(can_generate_vm_object_alloc_events);
         PRINT_CAPABABILITY(can_generate_compiled_method_load_events);
     }
+
+    can_get_source_file = capabilities.can_get_source_file_name;
 
     if(!error == JVMTI_ERROR_NONE)
     {
