@@ -12,7 +12,8 @@
 
 FILE *method_file = NULL;
 int verbose = 0;
-bool can_get_source_file;
+bool can_get_source_file  = false;
+bool can_get_line_numbers = false;
 
 void open_file() {
     char methodFileName[500];
@@ -58,12 +59,32 @@ cbCompiledMethodLoad(jvmtiEnv *env,
     char *csig;
     (*env)->GetClassSignature(env, class, &csig, NULL);
 
+    jvmtiJlocationFormat format;
+    (*env)->GetJLocationFormat(env, &format);
+
     if(can_get_source_file)
     {
         char* source_file;
         (*env)->GetSourceFileName(env, class, &source_file);
-        printf("%s : %s\n", csig, source_file);
+        printf("%s::%s : %s\t%d\n", csig, name, source_file, format);
         (*env)->Deallocate(env, (unsigned char *) source_file);
+    }
+
+
+    if(can_get_line_numbers)
+    {
+        jint entry_count_ptr;
+        jvmtiLineNumberEntry * table_ptr = NULL;
+        (*env)->GetLineNumberTable(env, method, &entry_count_ptr, &table_ptr);
+
+        if(table_ptr)
+        {
+            for(int idx = 0 ; idx < entry_count_ptr ; ++idx)
+            {
+                printf("%d : %d\n", (table_ptr+idx)->start_location, (table_ptr+idx)->line_number);
+            }
+            (*env)->Deallocate(env, (unsigned char*) table_ptr);
+        }
     }
 
     fprintf(method_file, "%lx %x %s.%s%s\n", (long unsigned int)code_addr, code_size, csig, name, msig);
@@ -163,6 +184,7 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
     }
 
     can_get_source_file = capabilities.can_get_source_file_name;
+    can_get_line_numbers = capabilities.can_get_line_numbers;
 
     if(!error == JVMTI_ERROR_NONE)
     {
