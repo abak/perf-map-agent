@@ -5,7 +5,7 @@
 #include <stdbool.h>
 
 FILE *method_file = NULL;
-bool verbose = false;
+int verbose = 0;
 
 void open_file() {
     char methodFileName[500];
@@ -26,7 +26,7 @@ cbVMStart(jvmtiEnv *jvmti, JNIEnv *env) {
     jvmtiJlocationFormat format;
     (*jvmti)->GetJLocationFormat(jvmti, &format);
 
-if(verbose)
+if(verbose>0)
     printf("[tracker] VMStart LocationFormat: %d\n", format);
 
 }
@@ -74,7 +74,7 @@ cbDynamicCodeGenerated(jvmtiEnv *jvmti_env,
 
     fprintf(method_file, "%lx %x %s\n", (long unsigned int)address, length, name);
 
-if(verbose)
+if(verbose>1)
     printf("[tracker] Code generated: %s %lx %x\n", 
             name, 
             (unsigned long int)address, 
@@ -85,7 +85,7 @@ void JNICALL
 cbCompiledMethodUnload(jvmtiEnv *jvmti_env,
             jmethodID method,
             const void* code_addr) {
-if(verbose)
+if(verbose>1)
     printf("[tracker] Unloaded %ld code_addr: 0x%lx\n", 
            (long int)method, 
            (unsigned long int)code_addr);
@@ -99,9 +99,18 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
     jvmtiCapabilities      capabilities;
     jvmtiEventCallbacks    callbacks;
 
-    if(options && 0 == strcmp(options, "verbose"))
-    {
-        verbose = true;
+    if(options)
+    { 
+        if(0 == strcmp(options, "vv"))
+        {
+            verbose = 2;
+        }
+        else if(0 == strcmp(options, "v"))
+        {
+            verbose = 1;
+        }
+        else
+            verbose = 0;
     }
 
     // Create the JVM TI environment (jvmti).
