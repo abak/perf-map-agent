@@ -8,6 +8,7 @@
 #include <unistd.h>
 
 #define PRINT_CAPABABILITY(Y) printf("%s : %d\n", #Y, capabilities.Y)
+#define PRINT_ERROR_CODE(X) printf("Error Code : %d", (int)X)
 
 FILE *method_file = NULL;
 int verbose = 0;
@@ -125,7 +126,7 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
     if(!res == JNI_OK)
     {
         printf("An error occured while retrieving the current environment");
-        return res;
+        return JNI_ERR;
     }
 
     // Clear the capabilities structure and set the ones you need.
@@ -153,9 +154,9 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
 
     if(!error == JVMTI_ERROR_NONE)
     {
-        printf("An error occured during the capabilities retrieval");
-        printf( "Error code : %d", (int)error);
-        return -1;
+        printf("An error occured during the capabilities retrieval\n");
+        PRINT_ERROR_CODE(error);
+        return JNI_ERR;
     }
 
     // Clear the callbacks structure and set the ones you want.
@@ -167,22 +168,64 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
     callbacks.DynamicCodeGenerated = &cbDynamicCodeGenerated;
     error = (*jvmti)->SetEventCallbacks(jvmti, &callbacks,
                       (jint)sizeof(callbacks));
+
+    if(!error == JVMTI_ERROR_NONE)
+    {
+        printf("An error occurred while assigning the callbacks\n");
+        PRINT_ERROR_CODE(error);
+        return JNI_ERR;
+    }
+
     //  If error!=JVMTI_ERROR_NONE, the callbacks were not accepted.
 
     // For each of the above callbacks, enable this event.
     error = (*jvmti)->SetEventNotificationMode(jvmti, JVMTI_ENABLE,
                       JVMTI_EVENT_VM_INIT, (jthread)NULL);
+
+    if(!error == JVMTI_ERROR_NONE)
+    {
+        printf("An error occurred while enabling JVMTI_EVENT_VM_INIT\n");
+        PRINT_ERROR_CODE(error);
+        return JNI_ERR;
+    }
+
     error = (*jvmti)->SetEventNotificationMode(jvmti, JVMTI_ENABLE,
                       JVMTI_EVENT_VM_START, (jthread)NULL);
+    if(!error == JVMTI_ERROR_NONE)
+    {
+        printf("An error occurred while enabling JVMTI_EVENT_VM_START\n");
+        PRINT_ERROR_CODE(error);
+        return JNI_ERR;
+    }
+
     error = (*jvmti)->SetEventNotificationMode(jvmti, JVMTI_ENABLE,
                       JVMTI_EVENT_COMPILED_METHOD_LOAD, (jthread)NULL);
+    if(!error == JVMTI_ERROR_NONE)
+    {
+        printf("An error occurred while enabling JVMTI_EVENT_COMPILED_METHOD_LOAD\n");
+        PRINT_ERROR_CODE(error);
+        return JNI_ERR;
+    }
+
     error = (*jvmti)->SetEventNotificationMode(jvmti, JVMTI_ENABLE,
                       JVMTI_EVENT_COMPILED_METHOD_UNLOAD, (jthread)NULL);
+    if(!error == JVMTI_ERROR_NONE)
+    {
+        printf("An error occurred while enabling JVMTI_EVENT_COMPILED_METHOD_UNLOAD\n");
+        PRINT_ERROR_CODE(error);
+        return JNI_ERR;
+    }
+    
     error = (*jvmti)->SetEventNotificationMode(jvmti, JVMTI_ENABLE,
                       JVMTI_EVENT_DYNAMIC_CODE_GENERATED, (jthread)NULL);
-    // In all the above calls, check errors.
+    if(!error == JVMTI_ERROR_NONE)
+    {
+        printf("An error occurred while enabling JVMTI_EVENT_DYNAMIC_CODE_GENERATED\n");
+        PRINT_ERROR_CODE(error);
+        return JNI_ERR;
+    }
 
-    return JNI_OK; // Indicates to the VM that the agent loaded OK.
+    return JNI_OK; 
 }
 
 
