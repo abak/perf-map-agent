@@ -3,6 +3,11 @@
 
 #include <string.h>
 #include <stdbool.h>
+#include <stdio.h>
+
+#include <unistd.h>
+
+#define PRINT_CAPABABILITY(Y) printf("%s : %d\n", #Y, capabilities.Y)
 
 FILE *method_file = NULL;
 int verbose = 0;
@@ -50,18 +55,21 @@ cbCompiledMethodLoad(jvmtiEnv *env,
     char *csig;
     (*env)->GetClassSignature(env, class, &csig, NULL);
 
+    char* source_file;
+
     fprintf(method_file, "%lx %x %s.%s%s\n", (long unsigned int)code_addr, code_size, csig, name, msig);
     fsync(fileno(method_file));
-    (*env)->Deallocate(env, name);
-    (*env)->Deallocate(env, msig);
-    (*env)->Deallocate(env, csig);
+    (*env)->Deallocate(env, (unsigned char *)name);
+    (*env)->Deallocate(env, (unsigned char *)msig);
+    (*env)->Deallocate(env, (unsigned char *)csig);
 
-if(verbose)
-    for (i = 0; i < map_length; i++) {
-      printf("[tracker] Entry: start_address: 0x%lx location: %d\n", 
-             (unsigned long int)map[i].start_address, 
-             (int)map[i].location);
-    }
+    if(verbose>1)
+        for (i = 0; i < map_length; i++) 
+        {
+          printf("[tracker] Entry: start_address: 0x%lx location: %d\n", 
+                 (unsigned long int)map[i].start_address, 
+                 (int)map[i].location);
+        }
 }
 
 void JNICALL
@@ -112,14 +120,13 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
         else
             verbose = 0;
     }
-
     // Create the JVM TI environment (jvmti).
     res = (*vm)->GetEnv(vm, (void **)&jvmti, JVMTI_VERSION_1);
-    // If res!=JNI_OK generate an error.
-
-    // Parse the options supplied to this agent on the command line.
-    //parse_agent_options(options);
-    // If options don't parse, do you want this to be an error?
+    if(!res == JNI_OK)
+    {
+        printf("An error occured while retrieving the current environment");
+        return res;
+    }
 
     // Clear the capabilities structure and set the ones you need.
     memset(&capabilities,0, sizeof(capabilities));
@@ -133,7 +140,23 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
 
     // Request these capabilities for this JVM TI environment.
     error = (*jvmti)->AddCapabilities(jvmti, &capabilities);
-    // If error!=JVMTI_ERROR_NONE, your agent may be in trouble.
+    if(verbose>0)
+    {
+        PRINT_CAPABABILITY(can_generate_all_class_hook_events);
+        PRINT_CAPABABILITY(can_tag_objects);
+        PRINT_CAPABABILITY(can_generate_object_free_events);
+        PRINT_CAPABABILITY(can_get_source_file_name);
+        PRINT_CAPABABILITY(can_get_line_numbers);
+        PRINT_CAPABABILITY(can_generate_vm_object_alloc_events);
+        PRINT_CAPABABILITY(can_generate_compiled_method_load_events);
+    }
+
+    if(!error == JVMTI_ERROR_NONE)
+    {
+        printf("An error occured during the capabilities retrieval");
+        printf( "Error code : %d", (int)error);
+        return -1;
+    }
 
     // Clear the callbacks structure and set the ones you want.
     memset(&callbacks,0, sizeof(callbacks));
