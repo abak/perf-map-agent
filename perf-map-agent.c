@@ -79,7 +79,8 @@ cbCompiledMethodLoad(jvmtiEnv *env,
 
         if(table_ptr)
         {
-            for(int idx = 0 ; idx < entry_count_ptr ; ++idx)
+            int idx;
+            for(idx = 0 ; idx < entry_count_ptr ; ++idx)
             {
                 printf("%d : %d\n", (table_ptr+idx)->start_location, (table_ptr+idx)->line_number);
             }
